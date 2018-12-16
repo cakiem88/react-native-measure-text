@@ -5,7 +5,6 @@
 #else
 #import "React/RCTConvert.h"   // Required when used as a Pod in a Swift project
 #endif
-
 #import "React/RCTFont.h"
 #import "RNMeasureText.h"
 
@@ -27,19 +26,18 @@ RCT_EXPORT_METHOD(heights:(NSDictionary *)options
     CGFloat fontSize = [RCTConvert CGFloat:options[@"fontSize"]];
     NSString *fontFamily = [RCTConvert NSString:options[@"fontFamily"]];
     NSString *fontWeight = [RCTConvert NSString:options[@"fontWeight"]];
-
+    
     NSMutableArray* results = [[NSMutableArray alloc] init];
     UIFont *font = [self getFont:fontFamily size:fontSize weight:fontWeight];
-
+    
     for (NSString* text in texts) {
         NSTextContainer *textContainer = [[NSTextContainer alloc] initWithSize: CGSizeMake(width, FLT_MAX)];
-
+        
         CGRect resultRect = [self fitText:text withFont:font container:textContainer];
         [results addObject:[NSNumber numberWithFloat:resultRect.size.height]];
     }
     resolve(results);
 }
-
 RCT_EXPORT_METHOD(widths:(NSDictionary *)options
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
@@ -55,12 +53,40 @@ RCT_EXPORT_METHOD(widths:(NSDictionary *)options
     
     for (NSString* text in texts) {
         NSTextContainer *textContainer = [[NSTextContainer alloc] initWithSize: CGSizeMake(FLT_MAX, height)];
-
+        
         CGRect resultRect = [self fitText:text withFont:font container:textContainer];
         [results addObject:[NSNumber numberWithFloat:resultRect.size.width]];
     }
     resolve(results);
 }
+
+RCT_EXPORT_METHOD(textSizes:(NSDictionary *)options
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+    NSArray *texts = [RCTConvert NSArray:options[@"texts"]];
+    CGFloat fontSize = [RCTConvert CGFloat:options[@"fontSize"]];
+    NSString *fontFamily = [RCTConvert NSString:options[@"fontFamily"]];
+    NSString *fontWeight = [RCTConvert NSString:options[@"fontWeight"]];
+    
+    NSMutableArray* results = [[NSMutableArray alloc] init];
+    UIFont *font = [self getFont:fontFamily size:fontSize weight:fontWeight];
+    NSDictionary* attribute = @{
+                                NSFontAttributeName: font,
+                                NSForegroundColorAttributeName: [UIColor blackColor],
+                                };
+    for (NSString* text in texts) {
+        const CGSize textSize = [text sizeWithAttributes:attribute];
+        NSDictionary* sizeReturn = @{
+                                    @"width": [NSNumber numberWithFloat:textSize.width],
+                                    @"height": [NSNumber numberWithFloat:textSize.height],
+                                    };
+         [results addObject:sizeReturn];
+        
+    }
+    resolve(results);
+}
+
 
 /**
  * Deprecated, use heights instead.
@@ -75,7 +101,7 @@ RCT_EXPORT_METHOD(measure:(NSDictionary *)options
 - (CGRect)fitText:(NSString*)text withFont:(UIFont *)font container:(NSTextContainer *)textContainer {
     NSTextStorage *textStorage = [[NSTextStorage alloc] initWithString:text];
     NSLayoutManager *layoutManager = [[NSLayoutManager alloc] init];
-
+    
     [layoutManager addTextContainer:textContainer];
     [textStorage addLayoutManager:layoutManager];
     
@@ -88,7 +114,8 @@ RCT_EXPORT_METHOD(measure:(NSDictionary *)options
 
 - (UIFont *)getFont:(NSString *)fontFamily size:(CGFloat)fontSize weight:(NSString*)fontWeight {
     return fontFamily == nil ?
-        [RCTConvert UIFont:@{@"fontWeight": fontWeight, @"fontSize": [NSNumber numberWithFloat:fontSize]}] :
-        [RCTConvert UIFont:@{@"fontFamily": fontFamily, @"fontSize": [NSNumber numberWithFloat:fontSize], @"fontWeight": fontWeight}];
+    [RCTConvert UIFont:@{@"fontWeight": fontWeight, @"fontSize": [NSNumber numberWithFloat:fontSize]}] :
+    [RCTConvert UIFont:@{@"fontFamily": fontFamily, @"fontSize": [NSNumber numberWithFloat:fontSize], @"fontWeight": fontWeight}];
 }
+
 @end
